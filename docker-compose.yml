@@ -1,0 +1,26 @@
+services:
+  pythonapp:
+   build: ./python/
+   command: sh -c "sleep 50s ; python3 ./fakedata_generator.py"
+   depends_on:
+    - mysql-db
+
+  mysql-db:
+    build: ./mysql/
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'corporacionDB'
+      MYSQL_ROOT_PASSWORD: 'admin'
+    ports:
+    - '501:3306'
+
+  phpadmin-monitor:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: 'mysql-db'
+      MYSQL_ROOT_PASSWORD: 'admin'
+    depends_on:
+      - mysql-db
