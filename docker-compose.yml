@@ -1,18 +1,56 @@
 services:
   pythonapp:
-   build: ./python/
-   command: sh -c "sleep 50s ; python3 ./fakedata_generator.py"
-   depends_on:
-    - mysql-db
+    build: ./python/
+    command: sh -c "sleep 50s ; python3 ./fakedata_generator.py"
+    depends_on:
+      - mysql-db
+    networks:
+      - mysql_cluster
+
+  managment:
+    image: mysql/mysql-cluster
+    container_name: managment
+    command: ndb_mgmd
+    networks:
+      - mysql_cluster
+
+  ndb1:
+    image: mysql/mysql-cluster
+    command: ndbd
+    container_name: ndb1
+    networks:
+      - mysql_cluster
+    depends_on:
+      - managment
+
+  ndb2:
+    image: mysql/mysql-cluster
+    command: ndbd
+    container_name: ndb2
+    networks:
+      - mysql_cluster
+    depends_on:
+      - managment
 
   mysql-db:
     build: ./mysql/
+    container_name: mysql-db
+    command: mysqld --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MYSQL_DATABASE: 'corporacionDB'
-      MYSQL_ROOT_PASSWORD: 'admin'
+      MYSQL_DATABASE: "corporacionDB"
+      MYSQL_ROOT_PASSWORD: "admin"
     ports:
-    - '501:3306'
+      - "501:3306"
+    volumes:
+      - ./mysql/privileges.sql:/docker-entrypoint-initdb.d/privileges.sql
+      - ./mysql/my.cnf:/etc/my.cnf
+    networks:
+      - mysql_cluster
+    depends_on:
+      - managment
+      - ndb1
+      - ndb2
 
   phpadmin-monitor:
     image: phpmyadmin
@@ -20,7 +58,16 @@ services:
     ports:
       - 8080:80
     environment:
-      PMA_HOST: 'mysql-db'
-      MYSQL_ROOT_PASSWORD: 'admin'
+      PMA_HOST: "mysql-db"
+      MYSQL_ROOT_PASSWORD: "admin"
     depends_on:
       - mysql-db
+    networks:
+      - mysql_cluster
+
+networks:
+  mysql_cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.0.0/16
