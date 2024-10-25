@@ -99,7 +99,7 @@ def generate_domicilio():
     values = (calle, numero, barrio, localidad, provincia)
     
     # Imprimir la consulta en la consola para depuración
-    print(query % values)
+    # print(query % values)
     
     # Ejecutar la consulta
     cursor.execute(query, values)
@@ -124,7 +124,7 @@ def generate_ficha_medica():
     values = (fecha_creacion, grupo_sanguineo, alergias, antecedentes)
     
     # Imprimir la consulta en la consola para depuración
-    print(query % values)
+    # print(query % values)
     
     # Ejecutar la consulta
     cursor.execute(query, values)
@@ -161,7 +161,7 @@ def generate_datos_personales():
               nivel_estudio, nacionalidad, domicilio_id, ficha_medica_id)
 
     # Imprimir la consulta en la consola para depuración
-    print(query % values)
+    # print(query % values)
 
     # Ejecutar la consulta
     cursor.execute(query, values)
@@ -186,7 +186,7 @@ def generate_expediente():
     values = (legajo, num_exp, libro, tomo, fajos)
 
     # Imprimir la consulta en la consola para depuración
-    print(query % values)
+    #print(query % values)
     
     # Ejecutar la consulta
     cursor.execute(query, values)
@@ -211,7 +211,7 @@ def generate_designacion(nov_id, fecha_ingreso):
     values = (categoria_id, funcion_id, departamento_id, fecha_designacion, nov_id)
 
     # Imprimir la consulta en la consola para depuración
-    print(query % values)
+    #(query % values)
     
     # Ejecutar la consulta
     cursor.execute(query, values)
@@ -219,6 +219,108 @@ def generate_designacion(nov_id, fecha_ingreso):
     
     # Retornar el ID de la designación generada
     return cursor.lastrowid
+
+#Generar tardanza para un empleado dado su expediente
+def generate_tardanza(exp_id):
+    fecha_hora=fake.date_time_between(start_date='-60d', end_date='now')
+    
+    query = """
+    INSERT INTO tardanza (exp_id, fecha_hora) 
+    VALUES (%s, %s)
+    """
+    cursor.execute(query, (exp_id, fecha_hora))
+    
+    #print(query % (exp_id, fecha_hora))
+    
+    connection.commit()
+    
+#Generar ausencia para un empleado dado su expediente
+def generate_ausencia(exp_id):
+    fecha=fake.date_between(start_date='-60d', end_date='now')
+    
+    query = """
+    INSERT INTO ausencia (exp_id, fecha) 
+    VALUES (%s, %s)
+    """
+    #print(query % (exp_id, fecha))
+    
+    cursor.execute(query, (exp_id, fecha)) 
+    categoria_id = random.randint(1, 10)
+    funcion_id = random.randint(1, 15)
+    departamento_id = random.randint(1, 10)
+    
+    connection.commit()  
+
+#Generar un ascenso aleatorio para un empleado desde su fecha de ingreso
+def generate_ascenso(exp_id, des_id, fecha_ingreso):
+    #Generar la novedad con la información del ascenso
+    tipo='Ascenso'
+    fecha_emision = fake.date_between(start_date=fecha_ingreso, end_date='today')
+    
+    query = """
+    INSERT INTO novedad (exp_id, tipo, fecha_emision) 
+    VALUES (%s, %s, %s)
+    """
+    values = (exp_id, tipo, fecha_emision)
+    
+    #print(query % values)
+    cursor.execute(query, values)
+    
+    connection.commit()
+    
+    #Generar el cambio de designacion
+    nov_id = cursor.lastrowid
+    
+    categoria_id = random.randint(1, 10)
+    funcion_id = random.randint(1, 15)
+    departamento_id = random.randint(1, 10)
+    
+    query = """
+    UPDATE designacion 
+    SET categoria_id=%s, funcion_id=%s, departamento_id=%s, fecha_designacion=%s, novedad_id=%s 
+    WHERE des_id=%s
+    """
+    values = (categoria_id, funcion_id, departamento_id, fecha_emision, nov_id, des_id)
+    
+    #print(query % values)
+    cursor.execute(query, values)
+    
+    connection.commit()
+
+#Generar un cambio aleatorio de departamento y categoria a un empleado por expediente
+def generate_transferencia(exp_id, des_id, fecha_ingreso):
+    #Generar la novedad con la información de la transferencia
+    tipo='Transferencia'
+    fecha_emision = fake.date_between(start_date=fecha_ingreso, end_date='today')
+    
+    query = """
+    INSERT INTO novedad (exp_id, tipo, fecha_emision) 
+    VALUES (%s, %s, %s)
+    """
+    values = (exp_id, tipo, fecha_emision)
+    
+    #print(query % values)
+    cursor.execute(query, values)
+    
+    connection.commit()
+    
+    #Generar el cambio de designacion
+    nov_id = cursor.lastrowid
+    
+    categoria_id = random.randint(1, 10)
+    departamento_id = random.randint(1, 10)
+    
+    query = """
+    UPDATE designacion 
+    SET categoria_id=%s, departamento_id=%s, fecha_designacion=%s, novedad_id=%s 
+    WHERE des_id = %s
+    """
+    values = (categoria_id, departamento_id, fecha_emision, nov_id, des_id)
+    
+    #print(query % values)
+    cursor.execute(query, values)
+    
+    connection.commit()
 
 # Generador de empleados
 def generate_empleado():
@@ -238,7 +340,7 @@ def generate_empleado():
     cursor.execute(novedad_query, (expediente_id, fecha_ingreso))
     
     # Imprimir la consulta de novedad
-    print(novedad_query % (expediente_id, fecha_ingreso))
+    #print(novedad_query % (expediente_id, fecha_ingreso))
     
     # Obtener el ID de la última novedad ingresada
     nov_id = cursor.lastrowid
@@ -257,22 +359,57 @@ def generate_empleado():
     """
     
     # Imprimir la consulta del empleado
-    print(empleado_query % (datos_personales_id, expediente_id, designacion_id , horario_trabajo, turno, fecha_ingreso))
+    #print(empleado_query % (datos_personales_id, expediente_id, designacion_id , horario_trabajo, turno, fecha_ingreso))
     
     cursor.execute(empleado_query, (datos_personales_id, expediente_id, designacion_id , horario_trabajo, turno, fecha_ingreso))
     
     # Confirmar los cambios en la base de datos
     connection.commit()
-
-    # Retornar el ID del empleado generado
-    return cursor.lastrowid
     
+    empleado_id = cursor.lastrowid
+    
+    print(f"Generado empleado n°. {empleado_id}")
+    
+    # Por empleado generado, vamos a generar entre 0 a 8 tardanzas para el ultimo es
+    cantidadTardanzas = random.randint(-3, 8) # Quiero que haya más posibilidades de que el empleado no tenga tardanzas a que sí tenga
+    if(cantidadTardanzas >= 1):
+        for _ in range(cantidadTardanzas):
+            print(f"Tardanza {_}")
+            generate_tardanza(expediente_id)
+    
+    # Por empleado generado, vamos a generar entre 0 a 5 ausencias para el último mes
+    cantidadAusencias = random.randint(-3,5)
+    if(cantidadAusencias >=1):
+        for _ in range(cantidadAusencias):
+            print(f"Ausencia {_}")
+            generate_ausencia(expediente_id)
+    
+    # Por empleado generado, habra una posibilidad de 1 en 10 que haya ascendido entre 1 a 2 veces desde su ingreso
+    chancesAscenso = random.randint(1,10)
+    if(chancesAscenso == 1):
+        cantidadAscensos = random.randint(1,2)
+        for _ in range(cantidadAscensos):
+            print(f"Ascenso {_}")
+            generate_ascenso(expediente_id, designacion_id, fecha_ingreso)    
+    
+    # Por empleado generado, habra una posibilidad de 1 en 15 de que haya sido transferido de departamente desde su ingreso
+    chancesTransferencia = random.randint(1,15)
+    if(chancesTransferencia == 1):
+        print(f"Transferencia")
+        generate_transferencia(expediente_id, designacion_id, fecha_ingreso)
+    
+
+   
+
+    
+ 
 generar_categorias()
 generar_departamentos()
 generar_funciones()
     
 for _ in range(cantidad_empleados):
     generate_empleado()
-#Cerrar cursos
+    
+#Cerrar la conexión
 connection.close()
 

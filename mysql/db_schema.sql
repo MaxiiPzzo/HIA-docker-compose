@@ -94,13 +94,13 @@ CREATE TABLE `empleado` (
 );
 
 CREATE TABLE `ausencia` (
-  `aus_id` bigint PRIMARY KEY,
+  `aus_id` bigint PRIMARY KEY AUTO_INCREMENT,
   `exp_id` bigint NOT NULL,
   `fecha` date NOT NULL DEFAULT (CURRENT_DATE)
 );
 
 CREATE TABLE `tardanza` (
-  `tar_id` bigint PRIMARY KEY,
+  `tar_id` bigint PRIMARY KEY AUTO_INCREMENT,
   `exp_id` bigint NOT NULL,
   `fecha_hora` timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
