@@ -35,8 +35,8 @@ services:
   mysql-db:
     build: ./mysql/
     container_name: mysql-db
-    command: mysqld --default-authentication-plugin=mysql_native_password
     restart: always
+    command: mysqld
     environment:
       MYSQL_DATABASE: "corporacionDB"
       MYSQL_ROOT_PASSWORD: "admin"
@@ -62,6 +62,39 @@ services:
       MYSQL_ROOT_PASSWORD: "admin"
     depends_on:
       - mysql-db
+    networks:
+      - mysql_cluster
+
+  mysql-exporter:
+    image: prom/mysqld-exporter
+    container_name: mysql-exporter
+    command:
+      - --config.my-cnf=/cfg/.my.cnf
+      - --mysqld.address=192.168.0.5:3306
+    volumes:
+      - ./mysql/config.my-cnf:/cfg/.my.cnf
+    ports:
+      - 9104:9104
+    networks:
+      - mysql_cluster
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - mysql_cluster
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
     networks:
       - mysql_cluster
 
